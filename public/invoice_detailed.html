@@ -1,0 +1,99 @@
+<!doctype html><html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فاتورة مفصّلة</title>
+<style>
+body{font-family:Tahoma,Arial;margin:12px}
+.box{max-width:900px;margin:0 auto}
+.head{display:flex;flex-direction:column;align-items:center;margin-bottom:10px}
+.logo{width:100px;border-radius:8px}
+label{display:block;margin:8px 0 4px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px}
+textarea{min-height:70px}
+.grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:700px){.grid{grid-template-columns:1fr 1fr 1fr}}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+button{padding:12px 16px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer}
+.primary{background:#111;color:#fff;border-color:#111}
+.qr{text-align:center;margin-top:14px}
+.qrimg{width:140px;height:140px;border:1px solid #eee}
+.zatca{display:block;margin:8px auto 0;width:90px;opacity:.85}
+.small{font-size:12px;opacity:.8}
+</style>
+</head><body><div class="box">
+  <div class="head">
+    <img class="logo" src="logo.jpeg">
+    <h3>فاتورة مفصّلة (للعمال)</h3>
+    <div class="small">الرقم الضريبي: 310912930400003</div>
+  </div>
+  <div class="grid">
+    <div><label>اسم العميل</label><input id="customer"></div>
+    <div><label>رقم الجوال</label><input id="mobile"></div>
+    <div><label>نوع الطبخ</label><input id="cook_type" placeholder="كبسة / ذبايح ..."></div>
+    <div><label>عدد الذبايح</label><input id="animals" type="number" min="0" value="0"></div>
+    <div><label>نوع الوجبة</label><input id="meal_type"></div>
+    <div><label>عدد الصحون</label><input id="plates" type="number" min="0" value="0"></div>
+    <div><label>التفصيل</label><textarea id="details" placeholder="تفاصيل التحضير والتقسيم..."></textarea></div>
+    <div><label>مقبلات (ح)</label><input id="starter_h" type="number" min="0" value="0"></div>
+    <div><label>مقبلات (ل)</label><input id="starter_l" type="number" min="0" value="0"></div>
+    <div><label>مقبلات (خ)</label><input id="starter_kh" type="number" min="0" value="0"></div>
+    <div><label>مقبلات (ط)</label><input id="starter_t" type="number" min="0" value="0"></div>
+    <div><label>ملاحظات أخرى</label><input id="note"></div>
+    <div><label>نوع الدفع</label>
+      <select id="pay_type"><option>نقدي</option><option>تحويل</option><option>شبكة</option><option>مؤجل</option></select></div>
+    <div><label>مبلغ التأمين</label><input id="deposit" type="number" min="0" step="0.01" value="0"></div>
+    <div><label>السعر للطبخ</label><input id="unit_price" type="number" min="0" step="0.01" value="0"></div>
+    <div><label>إجمالي المبلغ</label><input id="total" type="number" min="0" step="0.01" value="0"></div>
+    <div><label>الضريبة (15%)</label><input id="vat" type="number" min="0" step="0.01" value="0"></div>
+    <div><label>الإجمالي مع الضريبة</label><input id="grand_total" type="number" min="0" step="0.01" value="0"></div>
+    <div><label>وقت الاستلام</label><input id="pickup_time" type="datetime-local"></div>
+    <div><label>حالة الدفع</label>
+      <select id="pay_status"><option>مدفوع</option><option>غير مدفوع</option><option>تحويل</option><option>مؤجل</option></select></div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" onclick="saveAndPrint()">حفظ + طباعة</button>
+    <button onclick="location.href='index.html'">الرئيسية</button>
+  </div>
+
+  <div class="qr">
+    <img id="qrimg" class="qrimg" alt="QR">
+    <img class="zatca" src="zatca_logo.png" alt="ZATCA">
+  </div>
+</div>
+<script>
+function tlv(tag,val){const te=new TextEncoder();const v=te.encode(val);return new Uint8Array([tag,v.length,...v]);}
+function genZatcaQR(seller,vat,dt,total,tax){const d=[tlv(1,seller),tlv(2,vat),tlv(3,dt),tlv(4,String(total)),tlv(5,String(tax))];let len=d.reduce((a,b)=>a+b.length,0);let out=new Uint8Array(len),o=0;d.forEach(x=>{out.set(x,o);o+=x.length});return btoa(String.fromCharCode(...out));}
+function drawQR(){document.getElementById('qrimg').src='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"140\" height=\"140\"><rect width=\"100%\" height=\"100%\" fill=\"#fafafa\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\">QR Ready</text></svg>');}
+async function saveAndPrint(){
+  const get=id=>document.getElementById(id)?.value?.trim()||'';
+  const payload={
+    inv_type:'detailed',
+    customer:get('customer'),
+    mobile:get('mobile'),
+    cook_type:get('cook_type'),
+    animals:get('animals'),
+    meal_type:get('meal_type'),
+    plates:get('plates'),
+    details:get('details'),
+    starter_h:get('starter_h'),
+    starter_l:get('starter_l'),
+    starter_kh:get('starter_kh'),
+    starter_t:get('starter_t'),
+    note:get('note'),
+    pay_type:get('pay_type'),
+    deposit:get('deposit'),
+    unit_price:get('unit_price'),
+    total:get('total'),
+    vat:get('vat'),
+    grand_total:get('grand_total'),
+    pickup_time:get('pickup_time'),
+    pay_status:get('pay_status')
+  };
+  const qr=genZatcaQR('مطبخ عثمان أحمد المنجف','310912930400003',new Date().toISOString(),parseFloat(payload.grand_total||'0'),parseFloat(payload.vat||'0'));
+  drawQR(qr);
+  const r=await fetch('/log-invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const out=await r.json(); if(!out.ok){alert('تعذر الحفظ');return;}
+  window.print();
+}
+</script>
+</body></html>

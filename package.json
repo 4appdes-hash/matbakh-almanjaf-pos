@@ -1,0 +1,17 @@
+{
+  "name": "matbakh-almanjaf",
+  "private": true,
+  "version": "1.0.0",
+  "description": "POS invoices (Arabic) with dual modes + Excel export (Render-ready)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.11",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2"
+  }
+}
