@@ -54,4 +54,4 @@ app.get('/export-today.xlsx', async (req,res)=>{
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, ()=> console.log('✅ يعمل على Render — المسار /'));
+app.listen(PORT, ()=> console.log('✅ يعمل — افتح الرابط العام على /'));

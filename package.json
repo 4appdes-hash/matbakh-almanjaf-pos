@@ -1,8 +1,8 @@
 {
   "name": "matbakh-almanjaf",
   "private": true,
-  "version": "1.0.0",
-  "description": "POS invoices (Arabic) with dual modes + Excel export (Render-ready)",
+  "version": "1.1.0",
+  "description": "POS invoices (Arabic) with dual modes + Excel export + Firebase client (QR ready)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

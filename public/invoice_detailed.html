@@ -15,8 +15,7 @@ textarea{min-height:70px}
 button{padding:12px 16px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer}
 .primary{background:#111;color:#fff;border-color:#111}
 .qr{text-align:center;margin-top:14px}
-.qrimg{width:140px;height:140px;border:1px solid #eee}
-.zatca{display:block;margin:8px auto 0;width:90px;opacity:.85}
+.qrbox{width:160px;height:160px;margin:0 auto;border:1px solid #eee;display:grid;place-items:center}
 .small{font-size:12px;opacity:.8}
 </style>
 </head><body><div class="box">
@@ -51,21 +50,23 @@ button{padding:12px 16px;border-radius:10px;border:1px solid #ddd;background:#ff
   </div>
 
   <div class="actions">
-    <button class="primary" onclick="saveAndPrint()">حفظ + طباعة</button>
+    <button class="primary" id="saveBtn">حفظ + طباعة</button>
     <button onclick="location.href='index.html'">الرئيسية</button>
   </div>
 
   <div class="qr">
-    <img id="qrimg" class="qrimg" alt="QR">
-    <img class="zatca" src="zatca_logo.png" alt="ZATCA">
+    <div id="qr" class="qrbox">QR</div>
   </div>
 </div>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+<script src="firebase-init.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="helpers.js"></script>
 <script>
-function tlv(tag,val){const te=new TextEncoder();const v=te.encode(val);return new Uint8Array([tag,v.length,...v]);}
-function genZatcaQR(seller,vat,dt,total,tax){const d=[tlv(1,seller),tlv(2,vat),tlv(3,dt),tlv(4,String(total)),tlv(5,String(tax))];let len=d.reduce((a,b)=>a+b.length,0);let out=new Uint8Array(len),o=0;d.forEach(x=>{out.set(x,o);o+=x.length});return btoa(String.fromCharCode(...out));}
-function drawQR(){document.getElementById('qrimg').src='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"140\" height=\"140\"><rect width=\"100%\" height=\"100%\" fill=\"#fafafa\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-size=\"10\">QR Ready</text></svg>');}
-async function saveAndPrint(){
-  const get=id=>document.getElementById(id)?.value?.trim()||'';
+const VAT_NO = '310912930400003';
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  const get = id => document.getElementById(id)?.value?.trim()||'';
   const payload={
     inv_type:'detailed',
     customer:get('customer'),
@@ -87,13 +88,16 @@ async function saveAndPrint(){
     vat:get('vat'),
     grand_total:get('grand_total'),
     pickup_time:get('pickup_time'),
-    pay_status:get('pay_status')
+    pay_status:get('pay_status'),
+    created_at: new Date().toISOString()
   };
-  const qr=genZatcaQR('مطبخ عثمان أحمد المنجف','310912930400003',new Date().toISOString(),parseFloat(payload.grand_total||'0'),parseFloat(payload.vat||'0'));
-  drawQR(qr);
-  const r=await fetch('/log-invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const out=await r.json(); if(!out.ok){alert('تعذر الحفظ');return;}
-  window.print();
-}
+  const tlv = genZatcaTLVBase64({seller:'مطبخ عثمان أحمد المنجف',vat:VAT_NO,dt:payload.created_at,total:payload.grand_total,tax:payload.vat});
+  const node = document.getElementById('qr'); node.innerHTML='';
+  await QRCode.toCanvas(node, tlv, {width:160, margin:1});
+  const a = await saveServerLog(payload);
+  const b = await writeInvoiceToFirestore(payload);
+  if(!a.ok){alert('تعذر الحفظ المحلي');return;}
+  setTimeout(()=>window.print(), 300);
+});
 </script>
 </body></html>
